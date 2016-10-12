@@ -3,8 +3,6 @@
 #include <arp.h>
 #include <mailbox.h>
 
-struct arpentry arpcache[ARPSIZE];
-
 void arp_init(void)
 {
 	int32	i;
