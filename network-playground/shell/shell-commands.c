@@ -16,6 +16,7 @@ command xsh_kill(int, char *[]);
 command xsh_memstat(int, char *[]);
 command xsh_ps(int, char *[]);
 command xsh_test(int, char *[]);
+command xsh_arp(int, char *[]);
 
 /* This structure describes commands available to the shell. */
 struct centry commandtab[] = {
@@ -27,7 +28,8 @@ struct centry commandtab[] = {
     {"memstat", FALSE, xsh_memstat},
     {"ps", FALSE, xsh_ps},
     {"test", FALSE, xsh_test},
-    {"?", FALSE, xsh_help}
+    {"?", FALSE, xsh_help},
+    {"arp", TRUE, xsh_arp}
 };
 
 ulong ncommand = sizeof(commandtab) / sizeof(struct centry);
