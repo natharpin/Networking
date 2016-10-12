@@ -7,6 +7,7 @@
 
 #include <xinu.h>
 #include <arp.h>
+#include <string.h>
 
 /**
  * Initialize network interface.
@@ -15,10 +16,11 @@ void netInit(void)
 {
 
     arptab = malloc(sizeof(struct arp_entry));
-    struct arp_entry *arpInit = &arptab;
-    arpInit->ip = calloc(16, sizeof(uchar));
-    arpInit->mac = calloc(18, sizeof(uchar));
-    arpInit->next = NULL;
+    arptab->ipaddr = (uchar *)malloc(sizeof(uchar) * 16);
+    bzero((void *)arptab->ipaddr, sizeof(uchar) * 16);
+    arptab->mac = (uchar *)malloc(sizeof(uchar) * 18);
+    bzero((void *)arptab->mac, sizeof(uchar) * 18);
+    arptab->next = NULL;
 
     arpadd_sem = semcreate(1);
     arpdelete_sem = semcreate(1);
