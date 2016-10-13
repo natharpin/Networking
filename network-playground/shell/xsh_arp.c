@@ -1,6 +1,5 @@
 
 #include <xinu.h>
-#include <arp.h>
 
 bool isValidIpAddress(char *);
 

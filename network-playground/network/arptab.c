@@ -3,9 +3,9 @@
 
 syscall arp_add(char *ip, char *mac){
     wait(arpadd_sem);
-    struct arp_entry *current = arptab;
+    arpen *current = arptab;
     if(arp_count >= ARP_MAX){
-        struct arp_entry *replace = arptab->next->next;
+        arpen *replace = arptab->next->next;
         free((void *)arptab->next);
         arptab->next = replace;
         arp_count--;
@@ -26,8 +26,8 @@ syscall arp_remove(char *ip){
     wait(arpdelete_sem);
     if(arp_count == 0)
         return OK;
-    struct arp_entry *current = arptab;
-    struct arp_entry *prev = arptab;
+    arpen *current = arptab;
+    arpen *prev = arptab;
     uchar *ipaddr = (uchar *)malloc(sizeof(uchar *) * 16);
     //itoa(ip, ipaddr, 10);
     uchar *buff = (uchar *)malloc(sizeof(uchar *) * 16);

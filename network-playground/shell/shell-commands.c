@@ -6,7 +6,6 @@
 /* Embedded XINU, Copyright (C) 2009.  All rights reserved. */
 
 #include <xinu.h>
-#include <arp.h>
 
 /* Prototypes for shell commands defined in other files. */
 command xsh_clear(int, char *[]);

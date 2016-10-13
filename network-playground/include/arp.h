@@ -9,7 +9,9 @@ struct arp_entry{
     struct arp_entry *next;
 };
 
-struct arp_entry *arptab;
+typedef struct arp_entry arpen;
+
+arpen *arptab;
 
 int arp_count;
 
@@ -38,7 +40,7 @@ struct arp_packet{
     uint32_t arp_ip_dest;
 };
 
-syscall arp_resolve(char ip, char *mac);
+syscall arp_resolve(char *ip, uchar *mac);
 syscall arp_remove(char *ip);
 syscall arp_add(char *ip, char *mac);
 
@@ -46,4 +48,4 @@ void arpinit(void);
 
 command xsh_arp(int, char *[]);
 
-#endif
+#endif /* _ARP_H_ */

@@ -37,5 +37,6 @@
 #include <uart.h>
 #include <tty.h>
 #include <shell.h>
+#include <arp.h>
 
 

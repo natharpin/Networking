@@ -29,6 +29,7 @@ void arpDaemon(){
 
 syscall arpRecv(void *pkt)
 {	
+    //TODO: make receive function
 	return SYSERR;
 }
 
