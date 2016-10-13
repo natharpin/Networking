@@ -1,7 +1,7 @@
 #define ARP_MAX 30
 
 #ifndef _ARP_H_
-#define _ARP_H_
+#define _ARP_H_ "This is defined"
 
 struct arp_entry{
     char *ipaddr;
@@ -11,14 +11,12 @@ struct arp_entry{
 
 typedef struct arp_entry arpen;
 
-arpen *arptab;
+extern arpen *arptab;
 
-int arp_count;
+extern int arp_count;
 
-command xsh_arp(int, char *[]);
-
-semaphore arpadd_sem;
-semaphore arpdelete_sem;
+extern semaphore arpadd_sem;
+extern semaphore arpdelete_sem;
 
 typedef unsigned char uint8_t;
 typedef unsigned short int uint16_t;
@@ -46,6 +44,6 @@ syscall arp_add(char *ip, char *mac);
 
 void arpinit(void);
 
-command xsh_arp(int, char *[]);
+//command xsh_arp(int, char *[]);
 
 #endif /* _ARP_H_ */

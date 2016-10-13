@@ -3,14 +3,14 @@
 
 bool isValidIpAddress(char *);
 
-command xsh_test(int nargs, char *args[])
+command xsh_arp(int nargs, char *args[])
 {
 	if(nargs == 1)
 	{
 		if(strncmp(args[1], "-n", 2))
 		{
 			int i;
-			struct arp_entry *current = arptab;
+			arpen *current = arptab;
 			for(i = 0; i < arp_count; i++)
 			{
 				current = current->next;

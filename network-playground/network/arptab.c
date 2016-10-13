@@ -1,5 +1,4 @@
 #include <xinu.h>
-#include <arp.h>
 
 syscall arp_add(char *ip, char *mac){
     wait(arpadd_sem);

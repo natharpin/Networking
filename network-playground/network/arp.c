@@ -1,8 +1,12 @@
 #include <xinu.h>
-#include <arp.h>
 
 void arpDaemon(void);
 syscall arpRecv(void *);
+
+arpen *arptab;
+int arp_count;
+semaphore arpadd_sem;
+semaphore arpdelete_sem;
 
 void arpinit()
 {
