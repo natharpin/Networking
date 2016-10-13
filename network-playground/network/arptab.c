@@ -1,14 +1,10 @@
 #include <xinu.h>
-#include <stddef.h>
-#include <string.h>
 #include <arp.h>
 
-int arp_count = 0;
-
-syscall arp_add(uchar *ip, uchar *mac){
+syscall arp_add(char *ip, char *mac){
     wait(arpadd_sem);
     struct arp_entry *current = arptab;
-    if(count >= ARP_MAX){
+    if(arp_count >= ARP_MAX){
         struct arp_entry *replace = arptab->next->next;
         free((void *)arptab->next);
         arptab->next = replace;
@@ -26,19 +22,21 @@ syscall arp_add(uchar *ip, uchar *mac){
     signal(arpadd_sem);
 }
 
-syscall arp_remove(in_addr_t ip){
+syscall arp_remove(char *ip){
     wait(arpdelete_sem);
     if(arp_count == 0)
         return OK;
     struct arp_entry *current = arptab;
     struct arp_entry *prev = arptab;
-    char *ipaddr = (char *)malloc(sizeof(char *) * 16);
-    itoa(ip, ipaddr, 10);
-    char *buff = malloc(sizeof(char *) * 16);
+    uchar *ipaddr = (uchar *)malloc(sizeof(uchar *) * 16);
+    //itoa(ip, ipaddr, 10);
+    uchar *buff = (uchar *)malloc(sizeof(uchar *) * 16);
     while(current->next != NULL){
         prev = current;
         current = current->next;
-        if(strncmp(dot2ip(current->ipaddr, buff), ipaddr, 16)){
+        dot2ip(current->ipaddr, buff);
+        dot2ip(ip, ipaddr);
+        if(memcmp(buff, ipaddr, 16 * sizeof(uchar *))){
             prev->next = current->next;
             free((void *)current);
             break;

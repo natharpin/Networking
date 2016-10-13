@@ -1,8 +1,14 @@
+
+#include <xinu.h>
+#include <arp.h>
+
+bool isValidIpAddress(char *);
+
 command xsh_test(int nargs, char *args[])
 {
 	if(nargs == 1)
 	{
-		if(args[1] == "-n")
+		if(strncmp(args[1], "-n", 2))
 		{
 			int i;
 			struct arp_entry *current = arptab;
@@ -21,37 +27,51 @@ command xsh_test(int nargs, char *args[])
 		else
 		{
 			printf("Incorrect formatting - 1 argument: apr [-n] [IP-address]");
+		    return SYSERR;
 		}
 	}	
 	else if(nargs == 2)
 	{
-		if(args[1] == "-d") 
+		if(strncmp(args[1], "-d", 2)) 
 		{
 			if(isValidIpAddress(args[2]))
 			{
-				arp_delete(args[2]);
+				arp_remove(args[2]);
 			}
 			else
 			{	
 				printf("Incorrect IP Address formatting [xxx.xxx.xxx.xxx]");	
+		        return SYSERR;
 			}
 		}
 	}
 	else		//Arp command called with improper flags
 	{
 		printf("Incorrect formatting: arp [-n] [-d IP-address] [IP-address].");
+		return SYSERR;
 	}
-
+    return OK;
 }
 
+int firstOcc(char c, char *str, int index){
+    int i;
+    for(i = index; i < strlen(str); i++){
+       if(c == str[i])
+           return i;
+    }
+    return -1;
+}
 
-
-bool(isValidIpAddress(char *ipaddr))
-{
-	struct sockaddr_in *sa
-	int result = inet_pton(AF_INET, ipaddr, &(sa.sin_addr));
-	return result != 0;
-
+bool(isValidIpAddress(char *ipaddr)){
+    int i;
+    int colon = 0;
+    for(i = 0; i < 3; i++){
+        if(firstOcc(':', ipaddr, colon) != colon && firstOcc(':', ipaddr, colon) != -1)
+            colon = firstOcc(':', ipaddr, colon);
+        else
+            return 0;
+    }
+    return 1;
 }
 
 

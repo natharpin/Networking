@@ -6,6 +6,7 @@
 /* Embedded XINU, Copyright (C) 2009.  All rights reserved. */
 
 #include <xinu.h>
+#include <arp.h>
 
 /* Prototypes for shell commands defined in other files. */
 command xsh_clear(int, char *[]);
@@ -16,7 +17,6 @@ command xsh_kill(int, char *[]);
 command xsh_memstat(int, char *[]);
 command xsh_ps(int, char *[]);
 command xsh_test(int, char *[]);
-command xsh_arp(int, char *[]);
 
 /* This structure describes commands available to the shell. */
 struct centry commandtab[] = {
@@ -29,7 +29,7 @@ struct centry commandtab[] = {
     {"ps", FALSE, xsh_ps},
     {"test", FALSE, xsh_test},
     {"?", FALSE, xsh_help},
-    {"arp", TRUE, xsh_arp}
+    {"arp", FALSE, xsh_arp}
 };
 
 ulong ncommand = sizeof(commandtab) / sizeof(struct centry);

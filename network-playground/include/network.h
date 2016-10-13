@@ -6,6 +6,9 @@
 
 #include <kernel.h>
 
+#ifndef _NETWORK_H_
+#define _NETWORK_H_
+
 /* Little Endian converters */
 # define htons(x) ((((x)>>8) &0xff) | (((x) & 0xff)<<8))
 # define ntohs(x) htons(x)
@@ -238,3 +241,5 @@ struct dhcpgram                 /**< DHCP Packet Variables          */
 #define DHCP_MESSAGE_NACK     0x06
 #define DHCP_MESSAGE_RELEASE  0x07
 #define DHCP_MESSAGE_INFORM   0x08
+
+#endif

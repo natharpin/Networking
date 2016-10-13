@@ -1,66 +1,35 @@
 #include <xinu.h>
-#include <stddef.h>
 #include <arp.h>
-#include <mailbox.h>
 
-void arp_init(void)
+void arpDaemon(void);
+syscall arpRecv(void *);
+
+void arpinit()
 {
-	int32	i;
+	arptab = malloc(sizeof(struct arp_entry));
+    arptab->ipaddr = (char *)malloc(sizeof(char) * 16);
+    bzero((void *)arptab->ipaddr, sizeof(char) * 16);
+    arptab->mac = (char *)malloc(sizeof(char) * 18);
+    bzero((void *)arptab->mac, sizeof(char) * 18);
+    arptab->next = NULL;
+    
+    arp_count = 0;
 
-	for(i= i; i < ARP_SIZE; i++)
-	{
-		bzero(&arpcache[i], sizeof(struct arpEntry));
-		arpcache[i].arstate = AR_FREE;
-	}
-
-
-	arpqueue = malloc(ARP_NQUEUE);
-	if(SYSERR == arpqueue)
-	{
-		return SYSERR;
-	}
-	ready(create((void *) arpDaemon, ARP_IP_DEST, ARD_HARDWARE_DEST, "aprDaemon", 0), RESCHED_NO);
-	return OK;
+    arpadd_sem = semcreate(1);
+    arpdelete_sem = semcreate(1);
+    
+    //TODO: set up arp daemon init
 
 }
 
-thread arpDaemon(void)
-{
-	struct packet *pkt = NULL;
-
-	while(TRUE)
-	{
-		pkt = (struct packet *) mailboxReceive(arpqueue);
-		ARP_TRACE("Recieved Packet");
-		if(SYSERR == (int)pky)
-		{
-			continue;
-		}
-
-		arpReply(pkt);
-	
-		if(SYSERR == netFreebuf(pkt))
-		{
-			ARP_TRACE("Packet buffer not free");
-			continue;
-		}
-	}
-	return OK;
+void arpDaemon(){
+    //TODO: make arp daemon
+    return;
 }
 
-syscall arpRecv(struct packet *pkt)
+syscall arpRecv(void *pkt)
 {	
-	struct arpEntry *entry = NULL;
-	struct arpPkt *arp = NULL;
-	struct netaddr sha;
-	struct netaddr spa;
-	struct netaddr dpa; 
-	ipqmask im;
-
-	if(pkt == NULL)
-	{
-		return SYSERR;
-	}
+	return SYSERR;
 }
 
 
