@@ -8,6 +8,16 @@ bool isValidIpAddress(char *);
 
 command xsh_arp(int nargs, char *args[]){
 
+    char *ip = (char *)malloc(sizeof(char) * 16);
+    strncpy(ip, args[1], 16);
+    printf("%s\r\n", ip);
+    
+    
+    uchar *ip2 = (uchar *)malloc(sizeof(uchar) * 16);
+    dot2ip(args[1], ip2);
+    printf("%d\r\n", ip2);
+    
+
 	if(nargs == 2) {
 		if(!strncmp(args[1], "-n", 2)) {
 		    printf("%s\t%s\n\r", H1, H2);
@@ -53,7 +63,6 @@ int firstOcc(char c, char *str, int index){
 }
 
 bool(isValidIpAddress(char *ipaddr)){
-    printf("%s\n\r", ipaddr);
     int i;
     int period = 0;
     for(i = 0; i < 3; i++){
