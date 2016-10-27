@@ -18,7 +18,7 @@ $(VERBOSE).SILENT:
 
 # SHELL
 NET  = netInit.c arp.c arp_resolve.c arptab.c 
-SHLL = xsh_test.c xsh_arp.c shell-commands.c
+SHLL = xsh_test.c shell-commands.c xsh_arp.c
 
 SRC =	${SHLL:%.c=../shell/%.c} \
         ${NET:%.c=../network/%.c}

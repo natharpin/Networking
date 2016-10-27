@@ -27,15 +27,15 @@ typedef unsigned int uint32_t;
 #define ARP_OP_REPLY 2
 
 struct arp_packet{
-    uint16_t arp_hardware_type;
-    uint16_t arp_protocol_type;
-    uint8_t arp_hardware_length;
-    uint8_t arp_protocol_length;
-    uint16_t arp_operation;
-    uint8_t arp_eth_source[6];
-    uint32_t arp_ip_source;
-    uint8_t arp_eth_dest[6];
-    uint32_t arp_ip_dest;
+    uint16_t hardware_type;
+    uint16_t protocol_type;
+    uint8_t hardware_length;
+    uint8_t protocol_length;
+    uint16_t operation;
+    uint8_t eth_source[6];
+    uint32_t ip_source;
+    uint8_t eth_dest[6];
+    uint32_t ip_dest;
 };
 
 syscall arp_resolve(char *ip, uchar *mac);
