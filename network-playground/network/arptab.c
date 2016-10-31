@@ -21,6 +21,31 @@ syscall arp_add(char *ip, char *mac){
     signal(arpadd_sem);
 }
 
+int arp_exists(char *ip){
+    if(arp_count == 0)
+        return OK;
+    arpen *current = arptab;
+    arpen *prev = arptab;
+    uchar *ipaddr = (uchar *)malloc(sizeof(uchar *) * 16);
+    //itoa(ip, ipaddr, 10);
+    uchar *buff = (uchar *)malloc(sizeof(uchar *) * 16);
+    while(current->next != NULL){
+        prev = current;
+        current = current->next;
+        dot2ip(current->ipaddr, buff);
+        dot2ip(ip, ipaddr);
+        if(memcmp(buff, ipaddr, 16 * sizeof(uchar *))){
+            return TRUE;
+            break;
+        } else {
+            bzero((void *)buff, sizeof(char *) * 16);
+        }
+    }
+    free((void *)ipaddr);
+    free((void *)buff);
+    return FALSE;
+}
+
 syscall arp_remove(char *ip){
     wait(arpdelete_sem);
     if(arp_count == 0)

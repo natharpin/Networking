@@ -1,8 +1,6 @@
 
 #include <xinu.h>
 
-#define BROADCAST "FF:FF:FF:FF:FF:FF"
-
 static const long hextable[] = {
    [0 ... 255] = -1,
    ['0'] = 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
@@ -42,14 +40,13 @@ syscall arp_request(char *ip, uchar *mac){
 
     //TODO: make the entire buffer that the frame fits in
     char *buff = malloc(ETH_MAX_PKT_LEN);
+    bzero((void *)buff, ETH_MAX_PKT_LEN);
 
     //TODO: make the frame
     struct ethergram *frame = (struct ethergram *)buff;
-    //frame->dst = (uchar *)malloc(sizeof(uchar) * 18);
-    strncpy((char *)frame->dst, BROADCAST, 18);
-    uchar *tempmac = (uchar *)malloc(sizeof(uchar) * 18);
+    memcpy(frame->dst, BROADCAST, 6);
+    uchar *tempmac = (uchar *)malloc(ETH_ADDR_LEN);
     bzero(tempmac, 18 * sizeof(uchar));
-    //frame->src = (uchar *)malloc(sizeof(uchar) * 18);
     control(ETH0, ETH_CTRL_GET_MAC, (ulong)tempmac, 0);
     strncpy((char *)frame->src, (char *)tempmac, 18);
     frame->type = ETYPE_ARP;
@@ -57,23 +54,25 @@ syscall arp_request(char *ip, uchar *mac){
     //TODO: make the packet
     
     struct arp_packet *pkt = (struct arp_packet *)frame->data;
-    pkt->hardware_type = 1;
-    pkt->protocol_type = 0x0800;
-    pkt->hardware_length = 18;
-    pkt->protocol_length = 12;
-    pkt->operation = 1;
+    pkt->hardware_type = htons(1);
+    pkt->protocol_type = htons(0x0800);
+    pkt->hardware_length = ETH_ADDR_LEN;
+    pkt->protocol_length = IP_ADDR_LEN;
+    pkt->operation = htons(ARP_REQUEST);
     mac2num(tempmac, pkt->eth_source);
-    uchar *d2ip1 = (uchar *)malloc(18);
+    uchar *d2ip1 = (uchar *)malloc(IP_ADDR_LEN);
     dot2ip(nvramGet("lan_ipaddr\0"), d2ip1);
-    pkt->ip_source = atoi((char *)d2ip1);
+    memcpy(pkt->ip_source, d2ip1m IP_ADDR_LEN);
     bzero((void *)pkt->eth_dest, 32);
-    uchar *d2ip2 = (uchar *)malloc(18);
+    uchar *d2ip2 = (uchar *)malloc(IP_ADDR_LEN);
     dot2ip(nvramGet("lan_ipaddr\0"), d2ip2);
     pkt->ip_dest = atoi((char *)d2ip2);
     
+    //memcpy(&frame->data[0], pkt, sizeof(arp_packet));
+    
     //TODO: actually send the frame
     
-    etherWrite(&devtab[ETH0], buff, ETH_MAX_PKT_LEN);
+    write(ETH0, (void *)buff, ETH_MAX_PKT_LEN);
     
     return OK;
 }

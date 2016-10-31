@@ -5,7 +5,7 @@
 
 struct arp_entry{
     char *ipaddr;
-    char *mac;
+    uchar *mac;
     struct arp_entry *next;
 };
 
@@ -20,7 +20,6 @@ extern semaphore arpdelete_sem;
 
 typedef unsigned char uint8_t;
 typedef unsigned short int uint16_t;
-typedef unsigned int uint32_t;
 
 #define ARPHRD_ETHER 1
 #define ARP_OP_REQUEST 1
@@ -32,10 +31,10 @@ struct arp_packet{
     uint8_t hardware_length;
     uint8_t protocol_length;
     uint16_t operation;
-    uint8_t eth_source[6];
-    uint32_t ip_source;
-    uint8_t eth_dest[6];
-    uint32_t ip_dest;
+    uchar eth_source[6];
+    uchar ip_source[4];
+    uchar eth_dest[6];
+    uchar ip_dest[4];
 };
 
 syscall arp_resolve(char *ip, uchar *mac);
