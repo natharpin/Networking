@@ -11,10 +11,10 @@ semaphore arpdelete_sem;
 void arpinit()
 {
 	arptab = malloc(sizeof(struct arp_entry));
-    arptab->ipaddr = (char *)malloc(sizeof(char) * 16);
-    bzero((void *)arptab->ipaddr, sizeof(char) * 16);
-    arptab->mac = (char *)malloc(sizeof(char) * 18);
-    bzero((void *)arptab->mac, sizeof(char) * 18);
+    arptab->ipaddr = (uchar *)malloc(IP_ADDR_LEN);
+    bzero((void *)arptab->ipaddr, IP_ADDR_LEN);
+    arptab->mac = (uchar *)malloc(ETH_ADDR_LEN);
+    bzero((void *)arptab->mac, ETH_ADDR_LEN);
     arptab->next = NULL;
     
     arp_count = 0;
@@ -42,18 +42,6 @@ void arpDaemon(){
     }
 }
 
-void num2mac(uint8_t eth_source, uchar *mac){
-    
-    uchar *temp = (uchar *)malloc(sizeof(uchar) * 18);
-    bzero((void *)temp, sizeof(uchar) * 18);
-    
-    int i;
-    for(i = 0; i < 6; i++){
-        itoa(eth_source[i], temp, 16);
-        strcat(temp, mac);
-    }
-}
-
 /*    
     uint8_t eth_source[6];
     uint32_t ip_source;
@@ -63,25 +51,27 @@ void num2mac(uint8_t eth_source, uchar *mac){
 
 void arp_reply(struct ethergram *frame){
 
-    uchar *ourmac = (uchar *)malloc(sizeof(uchar) * 18);
-    bzero((void *)ourmac, 18 * sizeof(uchar));
+    //get our mac address
+    uchar *ourmac = (uchar *)malloc(ETH_ADDR_LEN);
+    bzero((void *)ourmac, ETH_ADDR_LEN);
     control(ETH0, ETH_CTRL_GET_MAC, (ulong)ourmac, 0);
     
-    memcpy(frame->src, frame->dst, 18);
-    memcpy(ourmac, frame->src, 18);
+    //put our mac in the source and their mac in the destination at the frame level
+    memcpy(frame->src, frame->dst, ETH_ADDR_LEN);
+    memcpy(ourmac, frame->src, ETH_ADDR_LEN);
     
     //TODO: switch operation
+    pkt->operation = htons(ARP_OP_REPLY);
     
-    //TODO: fix
+    //swap the ip source and destination
     struct arp_packet *pkt = (struct arp_packet *)frame->data;
     uchar temp_ipaddr = pkt->ip_source;
     pkt->ip_source = pkt->ip_dest;
     pkt->ip_dest = temp_ipaddr;
     
-    uchar temp_eth[6];
-    memcpy(temp_eth, pkt->eth_source, sizeof(uint8_t) * 6);
-    mac2num(ourmac, pkt->eth_source);
-    memcpy(pkt->eth_dest, temp_eth, sizeof(uint8_t) * 6);
+    //put our mac in the source and their mac in the destination at the packet level
+    memcpy(pkt->eth_dest, pkt->eth_source, ETH_ADDR_LEN);
+    memcpy(pkt->eth_source, ourmac, ETH_ADDR_LEN);
     
     write(ETH0, (void *)frame, ETH_MAX_PKT_LEN);
 }
@@ -90,30 +80,18 @@ syscall arpRecv(struct ethergram *frame)
 {	
     struct arp_packet *pkt = (struct arp_packet *)frame->data;
     
-    char *ipaddr = (char *)malloc(16);
-    itoa(pkt->ip_source, ipaddr, 10);
-    
-    uchar *mac = (uchar *)malloc(sizeof(uchar) * 18);
-    num2mac(pkt->eth_source, mac);
-    
     //TODO: save sender's mac
     
-    if(!arp_exists(ipaddr)){
-        arp_add(ipaddr, mac);
+    if(!arp_exists(pkt->ip_source)){
+        arp_add(pkt->ip_source, pkt->eth_source);
     }
     
     //TODO: if message is directed at us, reply
     
-    
-    uchar *ourip = (uchar *)malloc(sizeof(uchar) * 18);
+    uchar *ourip = (uchar *)malloc(IP_ADDR_LEN);
     dot2ip(nvramGet("lan_ipaddr\0"), ourip);
-    
-    char *tempip = (char *)malloc(18);
-    itoa(pkt->ip_dest, tempip, 10);
-    uchar *theirip = (uchar *)malloc(sizeof(uchar) * 18);
-    dot2ip(tempip, theirip);
-    
-    if(!memcmp((void *)ourip, (void *)theirip, 18 * sizeof(uchar))){
+
+    if(!memcmp((void *)ourip, (void *)theirip, IP_ADDR_LEN)){
         arp_reply(frame);
     }
 

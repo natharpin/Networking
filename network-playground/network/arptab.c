@@ -21,13 +21,12 @@ syscall arp_add(char *ip, char *mac){
     signal(arpadd_sem);
 }
 
-int arp_exists(char *ip){
+int arp_exists(uchar *ip){
     if(arp_count == 0)
         return OK;
     arpen *current = arptab;
     arpen *prev = arptab;
     uchar *ipaddr = (uchar *)malloc(sizeof(uchar *) * 16);
-    //itoa(ip, ipaddr, 10);
     uchar *buff = (uchar *)malloc(sizeof(uchar *) * 16);
     while(current->next != NULL){
         prev = current;

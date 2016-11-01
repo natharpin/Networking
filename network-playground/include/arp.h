@@ -4,7 +4,7 @@
 #define _ARP_H_ "This is defined"
 
 struct arp_entry{
-    char *ipaddr;
+    uchar *ipaddr;
     uchar *mac;
     struct arp_entry *next;
 };

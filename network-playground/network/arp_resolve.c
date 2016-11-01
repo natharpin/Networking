@@ -1,74 +1,41 @@
 
 #include <xinu.h>
 
-static const long hextable[] = {
-   [0 ... 255] = -1,
-   ['0'] = 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
-   ['A'] = 10, 11, 12, 13, 14, 15,
-   ['a'] = 10, 11, 12, 13, 14, 15      
-};
+syscall arp_request(uchar *ip, uchar *mac){
 
-long hexdec(unsigned const char *hex) {
-   long ret = 0; 
-   while (*hex && ret >= 0) {
-      ret = (ret << 4) | hextable[*hex++];
-   }
-   return ret; 
-}
-
-void mac2num(uchar *mac, uint8_t *nums){
-    int i = 0;
-    int currentindex = 0;
-    int charindex = 0;
-    uchar currentchar[3];
-    bzero(currentchar, 3 * sizeof(uchar));
-    while(mac[i] != '\0'){
-        while(mac[i] != ':'){
-            currentchar[charindex] = mac[i];
-            charindex++;
-            i++;
-        }
-        charindex = 0;
-        nums[currentindex] = (uint8_t)hexdec(currentchar);
-        bzero(currentchar, 3 * sizeof(uchar));
-        currentindex++;
-    }
-}
-
-syscall arp_request(char *ip, uchar *mac){
-
+    uchar broadcast[6] = [0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF];
 
     //TODO: make the entire buffer that the frame fits in
+    
     char *buff = malloc(ETH_MAX_PKT_LEN);
     bzero((void *)buff, ETH_MAX_PKT_LEN);
 
     //TODO: make the frame
+    
     struct ethergram *frame = (struct ethergram *)buff;
-    memcpy(frame->dst, BROADCAST, 6);
+    memcpy(frame->dst, broadcast, ETH_ADDR_LEN);
     uchar *tempmac = (uchar *)malloc(ETH_ADDR_LEN);
-    bzero(tempmac, 18 * sizeof(uchar));
+    bzero(tempmac, ETH_ADDR_LEN);
     control(ETH0, ETH_CTRL_GET_MAC, (ulong)tempmac, 0);
-    strncpy((char *)frame->src, (char *)tempmac, 18);
+    memcpy(frame->src, tempmac, ETH_ADDR_LEN);
     frame->type = ETYPE_ARP;
     
     //TODO: make the packet
     
     struct arp_packet *pkt = (struct arp_packet *)frame->data;
-    pkt->hardware_type = htons(1);
+    pkt->hardware_type = htons(ARPHRD_ETHER);
     pkt->protocol_type = htons(0x0800);
     pkt->hardware_length = ETH_ADDR_LEN;
     pkt->protocol_length = IP_ADDR_LEN;
-    pkt->operation = htons(ARP_REQUEST);
-    mac2num(tempmac, pkt->eth_source);
+    pkt->operation = htons(ARP_OP_REQUEST);
+    memcpy(pkt->eth_source, tempmac, ETH_ADDR_LEN);
     uchar *d2ip1 = (uchar *)malloc(IP_ADDR_LEN);
     dot2ip(nvramGet("lan_ipaddr\0"), d2ip1);
-    memcpy(pkt->ip_source, d2ip1m IP_ADDR_LEN);
-    bzero((void *)pkt->eth_dest, 32);
+    memcpy(pkt->ip_source, d2ip1, IP_ADDR_LEN);
+    bzero((void *)pkt->eth_dest, ETH_ADDR_LEN);
     uchar *d2ip2 = (uchar *)malloc(IP_ADDR_LEN);
-    dot2ip(nvramGet("lan_ipaddr\0"), d2ip2);
-    pkt->ip_dest = atoi((char *)d2ip2);
-    
-    //memcpy(&frame->data[0], pkt, sizeof(arp_packet));
+    dot2ip(ip, d2ip2);
+    memcpy(pkt->ip_dest, d2ip2, IP_ADDR_LEN);
     
     //TODO: actually send the frame
     
@@ -78,25 +45,33 @@ syscall arp_request(char *ip, uchar *mac){
 }
 
 syscall arp_resolve_rec(char *ip, uchar *mac, int num){
-    //TODO: check arp table
     
-    if(num == 3) return SYSERR;
+    uchar *ipnums = (uchar *)malloc(IP_ADDR_LEN);
+    dot2ip(ip, ipnums);
+    
+    //TODO: check arp table
     
     arpen *current = arptab;
     while(current->next != NULL){
-        if(!strncmp(ip, current->ipaddr, 16)){
-            strcpy((char *)mac, current->mac);
+        if(!memcmp(ipnums, current->ipaddr, IP_ADDR_LEN)){
+            memcpy(mac, current->mac, ETH_ADDR_LEN);
             return OK; 
         }
     }
     
+    if(num == 3) return SYSERR;
+    
     //TODO: else send
     
-    arp_request(ip, mac);
+    arp_request(ipnums, mac);
     
     //TODO: wait one second
     
     sleep(1000);
+    
+    //Clean up resources used
+    
+    free(ipnums);
     
     //TODO: call this again, num++
     
