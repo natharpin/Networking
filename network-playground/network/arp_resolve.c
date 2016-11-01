@@ -3,12 +3,14 @@
 
 syscall arp_request(uchar *ip, uchar *mac){
 
-    uchar broadcast[6] = [0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF];
+    printf("Entered arp_request");
+
+    uchar broadcast[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 
     //TODO: make the entire buffer that the frame fits in
     
-    char *buff = malloc(ETH_MAX_PKT_LEN);
-    bzero((void *)buff, ETH_MAX_PKT_LEN);
+    char *buff = malloc(PKTSZ);
+    bzero((void *)buff, PKTSZ);
 
     //TODO: make the frame
     
@@ -18,7 +20,7 @@ syscall arp_request(uchar *ip, uchar *mac){
     bzero(tempmac, ETH_ADDR_LEN);
     control(ETH0, ETH_CTRL_GET_MAC, (ulong)tempmac, 0);
     memcpy(frame->src, tempmac, ETH_ADDR_LEN);
-    frame->type = ETYPE_ARP;
+    frame->type = htons(ETYPE_ARP);
     
     //TODO: make the packet
     
@@ -33,18 +35,23 @@ syscall arp_request(uchar *ip, uchar *mac){
     dot2ip(nvramGet("lan_ipaddr\0"), d2ip1);
     memcpy(pkt->ip_source, d2ip1, IP_ADDR_LEN);
     bzero((void *)pkt->eth_dest, ETH_ADDR_LEN);
-    uchar *d2ip2 = (uchar *)malloc(IP_ADDR_LEN);
-    dot2ip(ip, d2ip2);
-    memcpy(pkt->ip_dest, d2ip2, IP_ADDR_LEN);
+    memcpy(pkt->ip_dest, ip, IP_ADDR_LEN);
     
     //TODO: actually send the frame
     
-    write(ETH0, (void *)buff, ETH_MAX_PKT_LEN);
+    if(write(ETH0, (void *)buff, PKTSZ) == SYSERR){
+        printf("Error in writing arp request to the network\n\r");
+        return SYSERR;
+    } else {
+        printf("great success!");
+    }
     
     return OK;
 }
 
 syscall arp_resolve_rec(char *ip, uchar *mac, int num){
+    
+    printf("Entered arp resolve rec, on %d \n\r", num);
     
     uchar *ipnums = (uchar *)malloc(IP_ADDR_LEN);
     dot2ip(ip, ipnums);
@@ -59,26 +66,28 @@ syscall arp_resolve_rec(char *ip, uchar *mac, int num){
         }
     }
     
-    if(num == 3) return SYSERR;
+    if(num == 3){
+        return SYSERR;
+    }
     
-    //TODO: else send
-    
+    //else send
+    printf("Right before arp request\n\r");
     arp_request(ipnums, mac);
-    
-    //TODO: wait one second
+    printf("Right after arp request\n\r");    
     
     sleep(1000);
     
     //Clean up resources used
-    
     free(ipnums);
     
-    //TODO: call this again, num++
-    
+    //call this again, incremented to hit the catch at num == 3
     return arp_resolve_rec(ip, mac, num + 1);
 }
 
 syscall arp_resolve(char *ip, uchar *mac){
+  
+    printf("Entered arp resolve with %s", ip);
+    
     return arp_resolve_rec(ip, mac, 0);
 }
 

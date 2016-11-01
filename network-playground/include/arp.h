@@ -38,8 +38,9 @@ struct arp_packet{
 };
 
 syscall arp_resolve(char *ip, uchar *mac);
-syscall arp_remove(char *ip);
-syscall arp_add(char *ip, char *mac);
+syscall arp_remove(uchar *ip);
+syscall arp_add(uchar *ip, uchar *mac);
+int arp_exists(uchar *ip);
 
 void arpinit(void);
 

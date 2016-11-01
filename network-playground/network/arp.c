@@ -1,7 +1,7 @@
 #include <xinu.h>
 
 void arpDaemon(void);
-syscall arpRecv(void *);
+syscall arpRecv(struct ethergram *);
 
 arpen *arptab;
 int arp_count;
@@ -24,19 +24,28 @@ void arpinit()
     
     //TODO: set up arp daemon init
 
+    int arp_daemon = create((void *)arpDaemon, INITSTK, 1, "Arp Daemon", 0);
+    if(!(isbadpid(arp_daemon)))
+        ready(arp_daemon, FALSE);
 }
 
 void arpDaemon(){
-    //TODO: wait for messages
     
-    char *buff = (char *)malloc(ETH_MAX_PKT_LEN);
+    //wait for messages
+    char *buff = (char *)malloc(PKTSZ);
     while(1){
-        bzero((void *)buff, ETH_MAX_PKT_LEN);
-        read(ETH0, (void *)buff, ETH_MAX_PKT_LEN);
-        
+        bzero((void *)buff, PKTSZ);
+        read(ETH0, (void *)buff, PKTSZ);
+                
         struct ethergram *frame = (struct ethergram *)buff;
         
-        if(frame->type == ETYPE_ARP){
+        printf("Recieved frame from: %d:%d:%d:%d:%d:%d\n\r", frame->src[0], frame->src[1], frame->src[2], frame->src[3], frame->src[4], frame->src[5]);
+        printf("Recieved frame to: %d:%d:%d:%d:%d:%d\n\r", frame->dst[0], frame->dst[1], frame->dst[2], frame->dst[3], frame->dst[4], frame->dst[5]);
+        
+        printf("checking if it is arp %X\n\r", frame->type);
+        if(htons(frame->type) == ETYPE_ARP){
+            printf("Got arp message\n\r");
+            sleep(1000);
             arpRecv(frame);
         }
     }
@@ -60,40 +69,61 @@ void arp_reply(struct ethergram *frame){
     memcpy(frame->src, frame->dst, ETH_ADDR_LEN);
     memcpy(ourmac, frame->src, ETH_ADDR_LEN);
     
-    //TODO: switch operation
-    pkt->operation = htons(ARP_OP_REPLY);
-    
     //swap the ip source and destination
     struct arp_packet *pkt = (struct arp_packet *)frame->data;
-    uchar temp_ipaddr = pkt->ip_source;
-    pkt->ip_source = pkt->ip_dest;
-    pkt->ip_dest = temp_ipaddr;
+    uchar *tempaddr = (uchar *)malloc(IP_ADDR_LEN);
+    memcpy(tempaddr, pkt->ip_source, IP_ADDR_LEN);
+    memcpy(pkt->ip_source, pkt->ip_dest, IP_ADDR_LEN);
+    memcpy(pkt->ip_dest, tempaddr, IP_ADDR_LEN);
+    
+    //switch operation from request to reply
+    pkt->operation = htons(ARP_OP_REPLY);
     
     //put our mac in the source and their mac in the destination at the packet level
     memcpy(pkt->eth_dest, pkt->eth_source, ETH_ADDR_LEN);
     memcpy(pkt->eth_source, ourmac, ETH_ADDR_LEN);
     
-    write(ETH0, (void *)frame, ETH_MAX_PKT_LEN);
+    write(ETH0, (void *)frame, PKTSZ);
 }
 
 syscall arpRecv(struct ethergram *frame)
 {	
+
+    printf("Entered arp recieve\n\r");
+    sleep(1000);
+    
     struct arp_packet *pkt = (struct arp_packet *)frame->data;
     
     //TODO: save sender's mac
     
+    printf("Packet made, entering arp_exists\n\r");
+    sleep(1000);
     if(!arp_exists(pkt->ip_source)){
+        printf("arp does not exist, adding address\n\r");
+        sleep(1000);
         arp_add(pkt->ip_source, pkt->eth_source);
     }
     
     //TODO: if message is directed at us, reply
     
+    printf("passed arp exists, getting our ip\n\r");
+    sleep(1000);
+    
     uchar *ourip = (uchar *)malloc(IP_ADDR_LEN);
     dot2ip(nvramGet("lan_ipaddr\0"), ourip);
-
-    if(!memcmp((void *)ourip, (void *)theirip, IP_ADDR_LEN)){
+    
+    printf("got our ip, entering arp reply check\n\r");
+    sleep(1000);
+    if(!memcmp((void *)ourip, (void *)pkt->ip_dest, IP_ADDR_LEN) && pkt->operation == ARP_OP_REQUEST){
+        printf("message was sent to us, replying\n\r");
+        sleep(1000);
         arp_reply(frame);
     }
+
+    printf("passed arp reply, returning\n\r");
+    sleep(1000);
+
+    free(ourip);
 
     return OK;
 }

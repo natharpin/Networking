@@ -1,6 +1,10 @@
 #include <xinu.h>
 
-syscall arp_add(char *ip, char *mac){
+syscall arp_add(uchar *ip, uchar *mac){
+
+    printf("entered arp add\n\r");
+    sleep(1000);
+
     wait(arpadd_sem);
     arpen *current = arptab;
     if(arp_count >= ARP_MAX){
@@ -12,63 +16,58 @@ syscall arp_add(char *ip, char *mac){
     while(current->next != NULL){
         current = current->next;
     }
+    
     arp_count++;
-    current->next = malloc(sizeof(struct arp_entry));
-    strcpy(current->next->ipaddr, ip);
-    strcpy(current->next->mac, mac);
-    current->next->next = NULL;
-    return OK;
+    arpen *new_entry = (arpen *)malloc(sizeof(arpen));
+    memcpy(new_entry, ip, IP_ADDR_LEN);
+    memcpy(new_entry, mac, IP_ADDR_LEN);
+    new_entry->next = NULL;
+    current->next = new_entry;
     signal(arpadd_sem);
+    return OK;
 }
 
 int arp_exists(uchar *ip){
-    if(arp_count == 0)
-        return OK;
+
+    printf("checking if %d.%d.%d.%d exists\n\r", ip[0],ip[1],ip[2],ip[3]);
+    sleep(1000);
+
     arpen *current = arptab;
-    arpen *prev = arptab;
-    uchar *ipaddr = (uchar *)malloc(sizeof(uchar *) * 16);
-    uchar *buff = (uchar *)malloc(sizeof(uchar *) * 16);
+    
+    printf("current ip = %d.%d.%d.%d\n\r", current->ipaddr[0],current->ipaddr[1],current->ipaddr[2],current->ipaddr[3]);
+    sleep(1000);    
+    printf("current mac = %X:%X:%X:%X:%X:%X\n\r", current->mac[0],current->mac[1],current->mac[2],current->mac[3],current->mac[4],current->mac[5]);
+    sleep(1000);
+    
     while(current->next != NULL){
-        prev = current;
         current = current->next;
-        dot2ip(current->ipaddr, buff);
-        dot2ip(ip, ipaddr);
-        if(memcmp(buff, ipaddr, 16 * sizeof(uchar *))){
+        if(!memcmp(ip, current->ipaddr, IP_ADDR_LEN)){
             return TRUE;
-            break;
-        } else {
-            bzero((void *)buff, sizeof(char *) * 16);
         }
+        printf("current ip = %d.%d.%d.%d\n\r", current->ipaddr[0],current->ipaddr[1],current->ipaddr[2],current->ipaddr[3]);
+        sleep(1000);    
+        printf("current mac = %X:%X:%X:%X:%X:%X\n\r", current->mac[0],current->mac[1],current->mac[2],current->mac[3],current->mac[4],current->mac[5]);
+        sleep(1000);
+
     }
-    free((void *)ipaddr);
-    free((void *)buff);
     return FALSE;
 }
 
-syscall arp_remove(char *ip){
+syscall arp_remove(uchar *ip){
     wait(arpdelete_sem);
     if(arp_count == 0)
         return OK;
     arpen *current = arptab;
     arpen *prev = arptab;
-    uchar *ipaddr = (uchar *)malloc(sizeof(uchar *) * 16);
-    //itoa(ip, ipaddr, 10);
-    uchar *buff = (uchar *)malloc(sizeof(uchar *) * 16);
     while(current->next != NULL){
         prev = current;
         current = current->next;
-        dot2ip(current->ipaddr, buff);
-        dot2ip(ip, ipaddr);
-        if(memcmp(buff, ipaddr, 16 * sizeof(uchar *))){
+        if(memcmp(ip, current->ipaddr, IP_ADDR_LEN)){
             prev->next = current->next;
             free((void *)current);
             break;
-        } else {
-            bzero((void *)buff, sizeof(char *) * 16);
         }
     }
-    free((void *)ipaddr);
-    free((void *)buff);
     signal(arpdelete_sem);
     return OK;
 }
