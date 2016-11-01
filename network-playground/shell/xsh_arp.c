@@ -6,29 +6,33 @@
 
 bool isValidIpAddress(char *);
 
+void printarp(arpen *en){
+    printf("%d.%d.%d.%d\t%X:%X:%X:%X:%X:%X\n", en->ipaddr[0], en->ipaddr[1], en->ipaddr[2], en->ipaddr[3], en->mac[0], en->mac[1], en->mac[2], en->mac[3], en->mac[4], en->mac[5]);
+}
+
 command xsh_arp(int nargs, char *args[]){
 
 	if(nargs == 2) {
 		if(!strncmp(args[1], "-n", 2)) {
-		    printf("%s\t%s\n\r", H1, H2);
+		    printf("%s\t%s\n", H1, H2);
 			int i;
 			arpen *current = arptab;
 			for(i = 0; i < arp_count; i++) {
 				current = current->next;
-				printf("%s\t%s",current->ipaddr, current->mac);
+			    printarp(current);
 			}			
 		} else if(isValidIpAddress(args[1])) {
 		    uchar *mac = (uchar *)malloc(ETH_ADDR_LEN);
 			if(arp_resolve(args[1], mac) != SYSERR){
-			    printf("%s added to the arp table\n\r", args[1]);
+			    printf("%s added to the arp table\n", args[1]);
 			    uchar *ipaddr = (uchar *)malloc(IP_ADDR_LEN);
 			    dot2ip(args[1], ipaddr);
 			    arp_add(ipaddr, mac);
 			} else {
-			    printf("Could not reach %s\n\r", args[1]);
+			    printf("Could not reach %s\n", args[1]);
 			}
 		} else {
-			printf("Incorrect formatting - 1 argument: apr [-n] [IP-address]\n\r");
+			printf("Incorrect formatting - 1 argument: apr [-n] [IP-address]\n");
 		    return SYSERR;
 		}
 	}	
@@ -38,14 +42,14 @@ command xsh_arp(int nargs, char *args[]){
 			    uchar *ipaddr = (uchar *)malloc(IP_ADDR_LEN);
 			    dot2ip(args[2], ipaddr);
 				if(arp_remove(ipaddr) == OK)
-				    printf("Successful removal of %s\n\r", args[2]);
+				    printf("Successful removal of %s\n", args[2]);
 			} else {	
-				printf("Incorrect IP Address formatting [xxx.xxx.xxx.xxx]\n\r");	
+				printf("Incorrect IP Address formatting [xxx.xxx.xxx.xxx]\n");	
 		        return SYSERR;
 			}
 		}
 	} else {		//Arp command called with improper flags
-		printf("Incorrect formatting: arp [-n] [-d IP-address] [IP-address]\n\r");
+		printf("Incorrect formatting: arp [-n] [-d IP-address] [IP-address]\n");
 		return SYSERR;
 	} 
     return OK;

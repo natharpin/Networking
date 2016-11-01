@@ -4,8 +4,8 @@
 #define _ARP_H_ "This is defined"
 
 struct arp_entry{
-    uchar *ipaddr;
-    uchar *mac;
+    uchar ipaddr[IP_ADDR_LEN];
+    uchar mac[ETH_ADDR_LEN];
     struct arp_entry *next;
 };
 

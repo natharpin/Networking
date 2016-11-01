@@ -11,9 +11,7 @@ semaphore arpdelete_sem;
 void arpinit()
 {
 	arptab = malloc(sizeof(struct arp_entry));
-    arptab->ipaddr = (uchar *)malloc(IP_ADDR_LEN);
     bzero((void *)arptab->ipaddr, IP_ADDR_LEN);
-    arptab->mac = (uchar *)malloc(ETH_ADDR_LEN);
     bzero((void *)arptab->mac, ETH_ADDR_LEN);
     arptab->next = NULL;
     
@@ -38,25 +36,12 @@ void arpDaemon(){
         read(ETH0, (void *)buff, PKTSZ);
                 
         struct ethergram *frame = (struct ethergram *)buff;
-        
-        printf("Recieved frame from: %d:%d:%d:%d:%d:%d\n\r", frame->src[0], frame->src[1], frame->src[2], frame->src[3], frame->src[4], frame->src[5]);
-        printf("Recieved frame to: %d:%d:%d:%d:%d:%d\n\r", frame->dst[0], frame->dst[1], frame->dst[2], frame->dst[3], frame->dst[4], frame->dst[5]);
-        
-        printf("checking if it is arp %X\n\r", frame->type);
+
         if(htons(frame->type) == ETYPE_ARP){
-            printf("Got arp message\n\r");
-            sleep(1000);
             arpRecv(frame);
         }
     }
 }
-
-/*    
-    uint8_t eth_source[6];
-    uint32_t ip_source;
-    uint8_t eth_dest[6];
-    uint32_t ip_dest;
-*/
 
 void arp_reply(struct ethergram *frame){
 
@@ -88,40 +73,23 @@ void arp_reply(struct ethergram *frame){
 
 syscall arpRecv(struct ethergram *frame)
 {	
-
-    printf("Entered arp recieve\n\r");
-    sleep(1000);
     
     struct arp_packet *pkt = (struct arp_packet *)frame->data;
     
     //TODO: save sender's mac
     
-    printf("Packet made, entering arp_exists\n\r");
-    sleep(1000);
     if(!arp_exists(pkt->ip_source)){
-        printf("arp does not exist, adding address\n\r");
-        sleep(1000);
         arp_add(pkt->ip_source, pkt->eth_source);
     }
     
     //TODO: if message is directed at us, reply
     
-    printf("passed arp exists, getting our ip\n\r");
-    sleep(1000);
-    
     uchar *ourip = (uchar *)malloc(IP_ADDR_LEN);
     dot2ip(nvramGet("lan_ipaddr\0"), ourip);
     
-    printf("got our ip, entering arp reply check\n\r");
-    sleep(1000);
     if(!memcmp((void *)ourip, (void *)pkt->ip_dest, IP_ADDR_LEN) && pkt->operation == ARP_OP_REQUEST){
-        printf("message was sent to us, replying\n\r");
-        sleep(1000);
         arp_reply(frame);
     }
-
-    printf("passed arp reply, returning\n\r");
-    sleep(1000);
 
     free(ourip);
 
