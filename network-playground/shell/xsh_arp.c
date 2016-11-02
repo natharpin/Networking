@@ -41,8 +41,13 @@ command xsh_arp(int nargs, char *args[]){
 			if(isValidIpAddress(args[2])) {
 			    uchar *ipaddr = (uchar *)malloc(IP_ADDR_LEN);
 			    dot2ip(args[2], ipaddr);
-				if(arp_remove(ipaddr) == OK)
-				    printf("Successful removal of %s\n", args[2]);
+                            int result = arp_remove(ipaddr);
+			    if(result == 2)
+			        printf("Successful removal of %s\n", args[2]);
+                            else if(result == 1)
+                                printf("Unable to delete address because it does not exist in arp table\n");
+                            else if(result == 0)
+                                printf("Unable to delete address because the arp table is empty");
 			} else {	
 				printf("Incorrect IP Address formatting [xxx.xxx.xxx.xxx]\n");	
 		        return SYSERR;

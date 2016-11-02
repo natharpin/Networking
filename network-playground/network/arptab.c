@@ -43,8 +43,9 @@ int arp_exists(uchar *ip){
 syscall arp_remove(uchar *ip){
     wait(arpdelete_sem);
     int result = 0;
-    if(arp_count == 0)
-        return 1;
+    if(arp_count == 0){
+        return 0;
+    }
     arpen *current = arptab;
     arpen *prev = arptab;
     while(current->next != NULL){
@@ -58,11 +59,11 @@ syscall arp_remove(uchar *ip){
             }
             free((void *)current);
             result = 2;
+            arp_count--;
             break;
         }
         result = 1;
     }
-    arp_count--;
     signal(arpdelete_sem);
     return result;
 }
