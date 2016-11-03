@@ -38,12 +38,12 @@ struct arp_packet{
 };
 
 syscall arp_resolve(char *ip, uchar *mac);
+void arp_reply(struct ethergram *);
+syscall arpRecv(struct ethergram *);
 syscall arp_remove(uchar *ip);
 syscall arp_add(uchar *ip, uchar *mac);
 int arp_exists(uchar *ip);
 
 void arpinit(void);
-
-//command xsh_arp(int, char *[]);
 
 #endif /* _ARP_H_ */

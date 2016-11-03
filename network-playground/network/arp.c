@@ -1,6 +1,5 @@
 #include <xinu.h>
 
-void arpDaemon(void);
 syscall arpRecv(struct ethergram *);
 
 arpen *arptab;
@@ -19,28 +18,6 @@ void arpinit()
 
     arpadd_sem = semcreate(1);
     arpdelete_sem = semcreate(1);
-    
-    //TODO: set up arp daemon init
-
-    int arp_daemon = create((void *)arpDaemon, INITSTK, 1, "Arp Daemon", 0);
-    if(!(isbadpid(arp_daemon)))
-        ready(arp_daemon, FALSE);
-}
-
-void arpDaemon(){
-    
-    //wait for messages
-    char *buff = (char *)malloc(PKTSZ);
-    while(1){
-        bzero((void *)buff, PKTSZ);
-        read(ETH0, (void *)buff, PKTSZ);
-                
-        struct ethergram *frame = (struct ethergram *)buff;
-
-        if(htons(frame->type) == ETYPE_ARP){
-            arpRecv(frame);
-        }
-    }
 }
 
 void arp_reply(struct ethergram *frame){

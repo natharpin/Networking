@@ -118,7 +118,7 @@ struct ethergram             /**< Ethernet Packet Variables             */
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  */
 
-struct ipgram                /**< IPv4 Packet Variables                 */
+struct ipv4gram                /**< IPv4 Packet Variables                 */
 {
     uchar  ver_ihl;          /**< IPv4 Version and Internet Header Len  */
     uchar  tos;              /**< IPv4 Type of Service                  */

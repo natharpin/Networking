@@ -5,5 +5,10 @@
 
 int firstOcc(char, char *, int );
 bool isValidIpAddress(char *);
+int ether_swap(void *);
+int ipv4_swap(void *, int);
+int getmac(void *);
+int getip(void *);
+void netDaemon(void);
 
 #endif
