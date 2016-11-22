@@ -103,10 +103,10 @@ syscall ping_reply(void *buff, int length){
 	struct ipv4gram *ipgram = (struct ipv4gram *)ether->data;
     struct icmpgram *icmp = (struct icmpgram *)ipgram->opts;
     
+    icmp->type = ICMP_REPLY;
     icmp->cksum = 0;
     icmp->cksum = checksum(icmp ,(length - ETHER_SIZE - IPv4_SIZE));
-    icmp->type = ICMP_REPLY;
-    ipWrite((void *)icmp, sizeof(struct icmpgram), IPv4_PROTO_ICMP, ipgram->dst);
+    ipWrite((void *)icmp, sizeof(struct icmpgram), IPv4_PROTO_ICMP, ipgram->src);
 
     return OK;
 }

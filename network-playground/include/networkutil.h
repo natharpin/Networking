@@ -11,5 +11,7 @@ int getmac(void *);
 int getip(void *);
 void netDaemon(void);
 void printEther(void *);
+void printIPv4(void *);
+void printICMP(void *);
 
 #endif

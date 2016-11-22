@@ -23,12 +23,11 @@ void arp_reply(struct ethergram *frame){
 
     //get our mac address
     uchar *ourmac = (uchar *)malloc(ETH_ADDR_LEN);
-    bzero((void *)ourmac, ETH_ADDR_LEN);
-    control(ETH0, ETH_CTRL_GET_MAC, (ulong)ourmac, 0);
+    getmac(ourmac);
     
     //put our mac in the source and their mac in the destination at the frame level
-    memcpy(frame->src, frame->dst, ETH_ADDR_LEN);
-    memcpy(ourmac, frame->src, ETH_ADDR_LEN);
+    memcpy(frame->dst, frame->src, ETH_ADDR_LEN);
+    memcpy(frame->src, ourmac, ETH_ADDR_LEN);
     
     //swap the ip source and destination
     struct arp_packet *pkt = (struct arp_packet *)frame->data;
@@ -43,6 +42,8 @@ void arp_reply(struct ethergram *frame){
     //put our mac in the source and their mac in the destination at the packet level
     memcpy(pkt->eth_dest, pkt->eth_source, ETH_ADDR_LEN);
     memcpy(pkt->eth_source, ourmac, ETH_ADDR_LEN);
+    
+    
     
     write(ETH0, (void *)frame, PKTSZ);
 }
@@ -62,7 +63,10 @@ syscall arpRecv(struct ethergram *frame){
     uchar ourip[IP_ADDR_LEN];
     getip(ourip);
     
-    if(!memcmp((void *)ourip, (void *)pkt->ip_dest, IP_ADDR_LEN) && pkt->operation == ARP_OP_REQUEST){
+    printf("Dest pkt %d.%d.%d.%d\n", pkt->ip_dest[0], pkt->ip_dest[1], pkt->ip_dest[2], pkt->ip_dest[3]);
+    
+    if((!memcmp((void *)ourip, (void *)pkt->ip_dest, IP_ADDR_LEN)) && (ntohs(pkt->operation) == ARP_OP_REQUEST)){
+        printf("Replying to arp\n");
         arp_reply(frame);
     }
 

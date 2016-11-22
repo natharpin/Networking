@@ -21,8 +21,10 @@ syscall ipWrite(void *payload, int len, int type, uchar *ip){
     uchar mac[ETH_ADDR_LEN];
     arp_resolve(ip, mac);
     
-    if(netWrite(ippkt, len, mac) == SYSERR)
+    if(netWrite(ippkt, len, mac) == SYSERR){
+        printf("Failed to netWrite!\n");
         return SYSERR;
+    }
 
     free(buff);        
     return OK;
@@ -45,7 +47,8 @@ syscall netWrite(void *ipv4, int len, uchar *mac){
     ippkt->ver_ihl = (IP_V4 << 4);
     ippkt->ver_ihl += (IPv4_SIZE / 4);
     ippkt->tos = 0;
-    ippkt->len = htons(len);
+    int length = len + sizeof(struct ipv4gram);
+    ippkt->len = htons(length);
     ppktID++;
     ippkt->id = htons(ppktID);
     ippkt->flags_froff = (IP_FLAG_DF << 13);
@@ -54,15 +57,24 @@ syscall netWrite(void *ipv4, int len, uchar *mac){
     ippkt->ttl = IP_TTL;
     ippkt->chksum = 0;
     getip(ippkt->src);
-    ippkt->chksum = checksum((uchar *)ippkt,
-                            (4 * (ippkt->ver_ihl & IP_IHL)));
+    //original checksum location
     
     // Set up ethergram
     memcpy(ether->dst, mac, ETH_ADDR_LEN);
     getmac(ether->src);
     ether->type = htons(ETYPE_IPv4);
+              
+    ippkt->chksum = checksum(ippkt, (4 * (ippkt->ver_ihl & IP_IHL)));
+
+    printEther(ether);
+    printIPv4(ippkt);
+    printICMP(ippkt->opts);
                     
-    write(ETH0, buff, (sizeof(struct ethergram) + sizeof(struct ipv4gram) + len));
+    if(write(ETH0, buff, (sizeof(struct ethergram) + sizeof(struct ipv4gram) + len)) == SYSERR){
+        printf("Failed to write!\n");
+    } else {
+        printf("Wrote successfully!\n");
+    }
 
     free(buff);
     return OK;
@@ -74,6 +86,8 @@ syscall ipv4Recv(void *frame, int length){
 
     struct ethergram *gram = (struct ethergram *)frame;
     struct ipv4gram *ippkt = (struct ipv4gram *)gram->data;
+    
+    printIPv4(ippkt);
     
     if(ippkt->ver_ihl != (IP_V4 << 4) + (IPv4_SIZE /4)){
         printf("ver_ihl is wrong!\n");
@@ -89,10 +103,13 @@ syscall ipv4Recv(void *frame, int length){
     uchar ip[IP_ADDR_LEN];
     getip(ip);
     
+    printf("Getting packet type %x to %d.%d.%d.%d\n", ippkt->proto, ippkt->dst[0], ippkt->dst[1], ippkt->dst[2], ippkt->dst[3]);
+    
     if(memcmp(ippkt->dst, ip, IP_ADDR_LEN) == 0){
         printf("Addressed to us\n");
         if(ippkt->proto == IPv4_PROTO_ICMP){
             struct icmpgram *icmp = (struct icmpgram *)ippkt->opts;
+            printICMP(icmp);
             if(icmp->type == ICMP_REPLY){
                 ping_recieve(frame);
             } else if(icmp->type == ICMP_REQUEST){
