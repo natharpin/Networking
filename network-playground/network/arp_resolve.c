@@ -45,17 +45,16 @@ syscall arp_request(uchar *ip, uchar *mac){
     return OK;
 }
 
-syscall arp_resolve_rec(char *ip, uchar *mac, int num){
+syscall arp_resolve_rec(uchar *ip, uchar *mac, int num){
     
-    uchar *ipnums = (uchar *)malloc(IP_ADDR_LEN);
-    dot2ip(ip, ipnums);
+    //printf("Entered arp resolve\n");
     
     //TODO: check arp table
     
     arpen *current = arptab;
     while(current->next != NULL){
         current = current->next;
-        if(!memcmp(ipnums, current->ipaddr, IP_ADDR_LEN)){
+        if(!memcmp(ip, current->ipaddr, IP_ADDR_LEN)){
             memcpy(mac, current->mac, ETH_ADDR_LEN);
             return OK; 
         }
@@ -66,10 +65,7 @@ syscall arp_resolve_rec(char *ip, uchar *mac, int num){
     }
     
     //else send
-    arp_request(ipnums, mac);
-    
-    //Clean up resources used
-    free(ipnums);
+    arp_request(ip, mac);
     
     sleep(1000);
     
@@ -77,7 +73,7 @@ syscall arp_resolve_rec(char *ip, uchar *mac, int num){
     return arp_resolve_rec(ip, mac, num + 1);
 }
 
-syscall arp_resolve(char *ip, uchar *mac){
+syscall arp_resolve(uchar *ip, uchar *mac){
     
     return arp_resolve_rec(ip, mac, 0);
 }

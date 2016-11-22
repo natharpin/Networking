@@ -23,10 +23,10 @@ command xsh_arp(int nargs, char *args[]){
 			}			
 		} else if(isValidIpAddress(args[1])) {
 		    uchar *mac = (uchar *)malloc(ETH_ADDR_LEN);
-			if(arp_resolve(args[1], mac) != SYSERR){
+		    uchar *ipaddr = (uchar *)malloc(IP_ADDR_LEN);
+		    dot2ip(args[1], ipaddr);
+			if(arp_resolve(ipaddr, mac) != SYSERR){
 			    printf("%s added to the arp table\n", args[1]);
-			    uchar *ipaddr = (uchar *)malloc(IP_ADDR_LEN);
-			    dot2ip(args[1], ipaddr);
 			    arp_add(ipaddr, mac);
 			} else {
 			    printf("Could not reach %s\n", args[1]);

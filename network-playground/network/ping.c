@@ -8,32 +8,34 @@ void pinginit(){
 
 syscall ping_request(char *dst){
 
-    uchar *mac = (uchar *)malloc(ETH_ADDR_LEN);
-    bzero((void *)mac, ETH_ADDR_LEN);
-    arp_resolve(dst, mac);
+    printf("Entered ping request\n");
+    
+    struct icmpgram *request = (struct icmpgram *)malloc(sizeof(struct icmpgram));
 
-    char requestpkt[REQUEST_PKTSZ];
-    char receivepkt[PKTSZ];
-    struct ethergram *request;
-    int length;
-    int attempts;
-    ushort id, seq;
-
-    id = 0;
-    seq = 0;
-    request = (struct ethergram *)requestpkt;
-
-    attempts = 0;
+    int attempts = 0;
+    ushort seq = 0;
+    
     while(attempts < 20){
 	    attempts++;
 
-    	bzero(request, REQUEST_PKTSZ);
-    	setupEther(request, dst, mac, id, seq);
+    	bzero(request, sizeof(struct icmpgram));
+    	//setup_icmpReq((void *)request, seq);
 
-    	write(ETH0, (void *)request, REQUEST_PKTSZ);
+        request->type = ICMP_REQUEST;
+        request->code = 0;
+        request->id = 0;
+        request->cksum = 0;
+        request->seq = htons(seq);
+        request->cksum = checksum(request ,(REQUEST_PKTSZ - ETHER_SIZE - IPv4_SIZE));
+
+        uchar ip[IP_ADDR_LEN];
+        dot2ip(dst, ip);
+
+    	ipWrite((void *)request, sizeof(struct icmpgram), IPv4_PROTO_ICMP, ip);
     	sleep(1000);
     	seq++;
     }
+    free(request);
     wait(ping_sem);
     return OK;
     
@@ -73,7 +75,6 @@ syscall ping_recieve(void *buff){
                 argram = (struct arp_packet *)ether->data;
     	        if(ntohs(argram->operation) == ARP_OP_REQUEST){
     		        arp_reply(ether);
-    		        write(ETH0, (void *)receivepkt, length);
     	        }
     	    } else {
     		    i++;
@@ -97,20 +98,15 @@ syscall ping_recieve(void *buff){
 }
 
 syscall ping_reply(void *buff, int length){
-    struct ethergram *ether;
-    struct ipv4gram *ipgram;
-    struct icmpgram *icmp;
 
-    ether = (struct ethergram *)buff;
-	ipgram = (struct ipv4gram *)ether->data;
-    icmp = (struct icmpgram *)ipgram->opts;
+    struct ethergram *ether = (struct ethergram *)buff;
+	struct ipv4gram *ipgram = (struct ipv4gram *)ether->data;
+    struct icmpgram *icmp = (struct icmpgram *)ipgram->opts;
     
-    ether_swap(ether);
-    ipv4_swap(ipgram, ntohs(ipgram->len));
     icmp->cksum = 0;
     icmp->cksum = checksum(icmp ,(length - ETHER_SIZE - IPv4_SIZE));
     icmp->type = ICMP_REPLY;
-    write(ETH0, (void *)buff, length);
+    ipWrite((void *)icmp, sizeof(struct icmpgram), IPv4_PROTO_ICMP, ipgram->dst);
 
     return OK;
 }

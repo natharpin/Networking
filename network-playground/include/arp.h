@@ -37,7 +37,7 @@ struct arp_packet{
     uchar ip_dest[4];
 };
 
-syscall arp_resolve(char *ip, uchar *mac);
+syscall arp_resolve(uchar *ip, uchar *mac);
 void arp_reply(struct ethergram *);
 syscall arpRecv(struct ethergram *);
 syscall arp_remove(uchar *ip);

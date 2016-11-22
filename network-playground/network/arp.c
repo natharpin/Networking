@@ -7,8 +7,7 @@ int arp_count;
 semaphore arpadd_sem;
 semaphore arpdelete_sem;
 
-void arpinit()
-{
+void arpinit(){
 	arptab = malloc(sizeof(struct arp_entry));
     bzero((void *)arptab->ipaddr, IP_ADDR_LEN);
     bzero((void *)arptab->mac, ETH_ADDR_LEN);
@@ -48,8 +47,7 @@ void arp_reply(struct ethergram *frame){
     write(ETH0, (void *)frame, PKTSZ);
 }
 
-syscall arpRecv(struct ethergram *frame)
-{	
+syscall arpRecv(struct ethergram *frame){	
     
     struct arp_packet *pkt = (struct arp_packet *)frame->data;
     
@@ -61,14 +59,12 @@ syscall arpRecv(struct ethergram *frame)
     
     //TODO: if message is directed at us, reply
     
-    uchar *ourip = (uchar *)malloc(IP_ADDR_LEN);
-    dot2ip(nvramGet("lan_ipaddr\0"), ourip);
+    uchar ourip[IP_ADDR_LEN];
+    getip(ourip);
     
     if(!memcmp((void *)ourip, (void *)pkt->ip_dest, IP_ADDR_LEN) && pkt->operation == ARP_OP_REQUEST){
         arp_reply(frame);
     }
-
-    free(ourip);
 
     return OK;
 }

@@ -10,5 +10,6 @@ int ipv4_swap(void *, int);
 int getmac(void *);
 int getip(void *);
 void netDaemon(void);
+void printEther(void *);
 
 #endif

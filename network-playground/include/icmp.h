@@ -12,8 +12,7 @@
 /* IP Header Length */
 #define IPv4_SIZE   (12 + IP_ADDR_LEN * 2)
 
-int icmpPrep(void *, ushort, char *, uchar *);
-void setupEther(struct ethergram *, char *, uchar *, ushort, ushort);
+void setup_icmpReq(struct icmpgram *, ushort);
 int icmpPrint(void *, int);
 
 #endif /* _ICMP_H_ */
