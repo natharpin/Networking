@@ -112,6 +112,7 @@ syscall ping_reply(void *buff, int length){
 }
 
 /*
+Example ping from morbius for comparison to our output
 -- Printing ethergram --
 Address of ethergram: 80024ec0
 Source address: 52:54:3:2:b1:6
