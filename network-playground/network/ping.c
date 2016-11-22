@@ -110,3 +110,40 @@ syscall ping_reply(void *buff, int length){
 
     return OK;
 }
+
+/*
+-- Printing ethergram --
+Address of ethergram: 80024ec0
+Source address: 52:54:3:2:b1:6
+Destination address: 0:1e:e5:85:ed:c5
+Type: IPv4 packet
+Address of payload: 80024ece
+
+Recieved ipv4 message
+Entered ipv4Recv
+
+-- Printing IPv4gram --
+Address of packet: 80024ece
+Ver_ihl: 4500
+tos: 0
+length: 84
+id: 0
+flags: 16384
+ttl: 64
+protocol: 1
+checksum: 54700
+IP source: 192.168.6.10
+IP destination: 192.168.6.121
+Address of payload: 80024ee2
+
+Getting packet type 1 to 192.168.6.121
+Addressed to us
+
+-- Printing ICMPgram --
+Address of datagram: 80024ee2
+type: 8
+code: 0
+checksum: 33884
+id: 12993
+seq: 15
+*/

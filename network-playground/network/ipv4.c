@@ -11,8 +11,22 @@ syscall ipWrite(void *payload, int len, int type, uchar *ip){
 
     struct ipv4gram *ippkt = (struct ipv4gram *)buff;
     
+    ippkt->ver_ihl = (IP_V4 << 4);
+    ippkt->ver_ihl += (IPv4_SIZE / 4);
+    ippkt->tos = 0;
+    int length = len + sizeof(struct ipv4gram);
+    ippkt->len = htons(length);
+    ppktID++;
+    ippkt->id = htons(ppktID);
     ippkt->proto = type;
+    ippkt->flags_froff = (IP_FLAG_DF << 13);
+    ippkt->flags_froff += 0;
+    ippkt->flags_froff = htons(ippkt->flags_froff);
+    ippkt->ttl = IP_TTL;
+    ippkt->chksum = 0;
+    getip(ippkt->src);
     memcpy(ippkt->dst, ip, IP_ADDR_LEN);
+    ippkt->chksum = checksum(ippkt, (4 * (ippkt->ver_ihl & IP_IHL)));
     
     memcpy(ippkt->opts, payload, len);
     
@@ -44,27 +58,11 @@ syscall netWrite(void *ipv4, int len, uchar *mac){
     printf("Dst mac addr - %x:%x:%x:%x:%x:%x\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 
     /* Set up the ipv4gram portion of packet */
-    ippkt->ver_ihl = (IP_V4 << 4);
-    ippkt->ver_ihl += (IPv4_SIZE / 4);
-    ippkt->tos = 0;
-    int length = len + sizeof(struct ipv4gram);
-    ippkt->len = htons(length);
-    ppktID++;
-    ippkt->id = htons(ppktID);
-    ippkt->flags_froff = (IP_FLAG_DF << 13);
-    ippkt->flags_froff += 0;
-    ippkt->flags_froff = htons(ippkt->flags_froff);
-    ippkt->ttl = IP_TTL;
-    ippkt->chksum = 0;
-    getip(ippkt->src);
-    //original checksum location
     
     // Set up ethergram
     memcpy(ether->dst, mac, ETH_ADDR_LEN);
     getmac(ether->src);
-    ether->type = htons(ETYPE_IPv4);
-              
-    ippkt->chksum = checksum(ippkt, (4 * (ippkt->ver_ihl & IP_IHL)));
+    ether->type = htons(ETYPE_IPv4);              
 
     printEther(ether);
     printIPv4(ippkt);
