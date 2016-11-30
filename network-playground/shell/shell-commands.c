@@ -18,6 +18,7 @@ command xsh_ps(int, char *[]);
 command xsh_test(int, char *[]);
 command xsh_arp(int, char *[]);
 command xsh_ping(int, char *[]);
+command xsh_bfp(int, char *[]);
 
 /* This structure describes commands available to the shell. */
 struct centry commandtab[] = {
@@ -31,7 +32,8 @@ struct centry commandtab[] = {
     {"test", FALSE, xsh_test},
     {"?", FALSE, xsh_help},
     {"arp", FALSE, xsh_arp},
-    {"ping", FALSE, xsh_ping}
+    {"ping", FALSE, xsh_ping},
+    {"bfp", FALSE, xsh_bfp}
 };
 
 ulong ncommand = sizeof(commandtab) / sizeof(struct centry);

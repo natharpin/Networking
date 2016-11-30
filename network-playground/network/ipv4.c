@@ -1,5 +1,11 @@
 #include <xinu.h>
 
+typedef int boolean;
+#define TRUE 1
+#define FALSE 0
+
+int ppktID = 0;
+
 syscall ipWrite(void *payload, int len, int type, uchar *ip){
 
     //The caller passes in the ICMP gram in the payload, 
@@ -16,12 +22,20 @@ syscall ipWrite(void *payload, int len, int type, uchar *ip){
         
         bzero(ippkt, sizeof(struct ipv4gram));
         
+        boolean lflag = FALSE;
+        boolean frag = FALSE;
         int templen = 0;
+        int totallen = 0;
     
-        if(len > ETH_MTU - sizeof(struct ipv4gram))
-            templen = ETH_MTU - sizeof(struct ipv4gram));
-        else
+        if(len > ETH_MTU - sizeof(struct ipv4gram)){
+            templen = ETH_MTU - sizeof(struct ipv4gram);
+            frag = TRUE;
+        }else if(frag && len <= ETH_MTU - sizeof(struct ipv4gram)){
             templen = len;
+            lflag = TRUE;
+        }else{
+            templen = len;
+        }
     
         ippkt->ver_ihl = (IP_V4 << 4);
         ippkt->ver_ihl += (IPv4_SIZE / 4);
@@ -31,10 +45,20 @@ syscall ipWrite(void *payload, int len, int type, uchar *ip){
         ippkt->id = htons(ppktID);
         ippkt->proto = type;
         
-        //TODO: fix flags! set to IP_FLAG_MF
-        ippkt->flags_froff = (IP_FLAG_DF << 13);
-        ippkt->flags_froff += 0;
-        ippkt->flags_froff = htons(ippkt->flags_froff);
+        if(frag && !lflag){
+            ippkt->flags_froff = (IPv4_FLAG_MF);
+            ippkt->flags_froff += totallen / 8;
+            ippkt->flags_froff = htons(ippkt->flags_froff);
+        }else if(lflag){
+            ippkt->flags_froff = (IPv4_FLAG_LF);
+            ippkt->flags_froff += totallen / 8;
+            ippkt->flags_froff = htons(ippkt->flags_froff);
+        }else{
+            ippkt->flags_froff = (IPv4_FLAG_DF);
+            ippkt->flags_froff += 0;
+            ippkt->flags_froff = htons(ippkt->flags_froff);
+        }
+        
         ippkt->ttl = IP_TTL;
         ippkt->chksum = 0;
         getip(ippkt->src);
@@ -53,15 +77,14 @@ syscall ipWrite(void *payload, int len, int type, uchar *ip){
             return SYSERR;
         }
         
-        payload = (void *)(((long)payload) + templen)
+        payload = (void *)(((long)payload) + templen);
+        totallen += templen;
         len = len - templen;
     }
           
     free(buff);  
     return OK;
 }
-
-int ppktID = 0;
 
 syscall netWrite(void *ipv4, int len, uchar *mac){
 
