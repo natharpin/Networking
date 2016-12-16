@@ -15,6 +15,10 @@ void netInit(void)
     arpinit();
     pinginit();
     
+    fragHead = (struct fragment *)malloc(sizeof(struct fragment));
+    fragHead->seq = -1;
+    fragHead->next = NULL;
+    
     int net_daemon = create((void *)netDaemon, INITSTK, 1, "Network Daemon", 0);
     if(!(isbadpid(net_daemon)))
         ready(net_daemon, FALSE);

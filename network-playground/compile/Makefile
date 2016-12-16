@@ -19,7 +19,8 @@ $(VERBOSE).SILENT:
 # SHELL
 NET  = netInit.c arp_resolve.c arp.c \
        arptab.c ping.c icmp.c \
-       networkutil.c networkdaemon.c ipv4.c
+       networkutil.c networkdaemon.c ipv4.c \
+       fragment.c
 
 SHLL = xsh_test.c shell-commands.c xsh_arp.c xsh_ping.c
 

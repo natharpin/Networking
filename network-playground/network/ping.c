@@ -6,24 +6,25 @@ void pinginit(){
     ping_sem = semcreate(0);
 }
 
-syscall ping_request(char *dst){
+int pingID = 0;
 
-    printf("Entered ping request\n");
+syscall ping_request(char *dst){
     
     struct icmpgram *request = (struct icmpgram *)malloc(sizeof(struct icmpgram));
 
     int attempts = 0;
     ushort seq = 0;
     
+    pingID++;
+    
     while(attempts < 20){
 	    attempts++;
 
     	bzero(request, sizeof(struct icmpgram));
-    	//setup_icmpReq((void *)request, seq);
 
         request->type = ICMP_REQUEST;
         request->code = 0;
-        request->id = 0;
+        request->id = pingID;
         request->cksum = 0;
         request->seq = htons(seq);
         request->cksum = checksum(request ,(REQUEST_PKTSZ - ETHER_SIZE - IPv4_SIZE));

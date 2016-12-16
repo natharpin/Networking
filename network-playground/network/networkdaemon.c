@@ -12,7 +12,7 @@ void netDaemon(){
                 
         struct ethergram *frame = (struct ethergram *)buff;
 
-        printEther(buff);
+        //printEther(buff);
 
         if(htons(frame->type) == ETYPE_ARP){
             arpRecv(frame);

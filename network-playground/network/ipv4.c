@@ -4,6 +4,7 @@ typedef int boolean;
 #define TRUE 1
 #define FALSE 0
 
+struct fragment *fragHead;
 int ppktID = 0;
 
 syscall ipWrite(void *payload, int len, int type, uchar *ip){
@@ -18,14 +19,15 @@ syscall ipWrite(void *payload, int len, int type, uchar *ip){
 
     ppktID++;
 
+    boolean frag = FALSE;
+    boolean lflag = FALSE;
+    int totallen = 0;
+
     while(len > 0){
         
         bzero(ippkt, sizeof(struct ipv4gram));
-        
-        boolean lflag = FALSE;
-        boolean frag = FALSE;
+    
         int templen = 0;
-        int totallen = 0;
     
         if(len > ETH_MTU - sizeof(struct ipv4gram)){
             templen = ETH_MTU - sizeof(struct ipv4gram);
@@ -36,10 +38,11 @@ syscall ipWrite(void *payload, int len, int type, uchar *ip){
         }else{
             templen = len;
         }
-    
+        
         ippkt->ver_ihl = (IP_V4 << 4);
         ippkt->ver_ihl += (IPv4_SIZE / 4);
         ippkt->tos = 0;
+        
         int length = templen + sizeof(struct ipv4gram);
         ippkt->len = htons(length);
         ippkt->id = htons(ppktID);
@@ -63,7 +66,8 @@ syscall ipWrite(void *payload, int len, int type, uchar *ip){
         ippkt->chksum = 0;
         getip(ippkt->src);
         memcpy(ippkt->dst, ip, IP_ADDR_LEN);
-        ippkt->chksum = checksum(ippkt, (4 * (ippkt->ver_ihl & IP_IHL)));
+        //Added the uchar * cast to checksum
+        ippkt->chksum = checksum((uchar *)ippkt, (4 * (ippkt->ver_ihl & IP_IHL)));
     
         memcpy(ippkt->opts, payload, templen);
     
@@ -73,7 +77,7 @@ syscall ipWrite(void *payload, int len, int type, uchar *ip){
         arp_resolve(ip, mac);
     
         if(netWrite(ippkt, templen, mac) == SYSERR){
-            printf("Failed to netWrite!\n");
+            //printf("Failed to netWrite!\n");
             return SYSERR;
         }
         
@@ -94,8 +98,8 @@ syscall netWrite(void *ipv4, int len, uchar *mac){
     
     struct ipv4gram *ippkt = (struct ipv4gram *)ether->data;
 
-    printf("Sending packet type %x to %d.%d.%d.%d\n", ippkt->proto, ippkt->dst[0], ippkt->dst[1], ippkt->dst[2], ippkt->dst[3]);
-    printf("Dst mac addr - %x:%x:%x:%x:%x:%x\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+    //printf("Sending packet type %x to %d.%d.%d.%d\n", ippkt->proto, ippkt->dst[0], ippkt->dst[1], ippkt->dst[2], ippkt->dst[3]);
+    //printf("Dst mac addr - %x:%x:%x:%x:%x:%x\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 
     // Set up ethergram
     memcpy(ether->dst, mac, ETH_ADDR_LEN);
@@ -107,18 +111,19 @@ syscall netWrite(void *ipv4, int len, uchar *mac){
     printICMP(ippkt->opts);
                     
     if(write(ETH0, buff, (sizeof(struct ethergram) + sizeof(struct ipv4gram) + len)) == SYSERR){
-        printf("Failed to write!\n");
-    } else {
-        printf("Wrote successfully!\n");
-    }
+        //printf("Failed to write!\n");
+    } 
+    //else {
+    //    printf("Wrote successfully!\n");
+    //}
 
     free(buff);
     return OK;
 }
 
-syscall ipv4Recv(void *frame, int length){
+int currID = -1;
 
-    printf("Entered ipv4Recv\n");
+syscall ipv4Recv(void *frame, int length){
 
     struct ethergram *gram = (struct ethergram *)frame;
     struct ipv4gram *ippkt = (struct ipv4gram *)gram->data;
@@ -126,26 +131,32 @@ syscall ipv4Recv(void *frame, int length){
     printIPv4(ippkt);
     
     if(ippkt->ver_ihl != (IP_V4 << 4) + (IPv4_SIZE /4)){
-        printf("ver_ihl is wrong!\n");
         return SYSERR;
     }
-    /*
-    if(ippkt->chksum != checksum((uchar *)ippkt, (4 * (ippkt->ver_ihl & IP_IHL)))){
-        printf("Checksum failed!\n");
-        return SYSERR;   
-    }
-    */
     
     uchar ip[IP_ADDR_LEN];
     getip(ip);
     
-    printf("Getting packet type %x to %d.%d.%d.%d\n", ippkt->proto, ippkt->dst[0], ippkt->dst[1], ippkt->dst[2], ippkt->dst[3]);
-    
+    //If the packet is addressed to us, deal with it
     if(memcmp(ippkt->dst, ip, IP_ADDR_LEN) == 0){
-        printf("Addressed to us\n");
+        //If the packet is fragmented, add it to the fragment list
+        if(htons(ippkt->flags_froff) & IPv4_FLAG_MF){
+            if(currID != ippkt->id){
+                clearFrag();
+                currID = ippkt->id;
+            }
+            int seq = ippkt->flags_froff & 0x1FFF;
+            addFrag(seq, ippkt->len - sizeof(struct ipv4gram), ippkt->opts);
+            return OK;
+        } 
+        //If the packet is the last one of a fragment chain, add it to the list
+        else if(!(htons(ippkt->flags_froff) & 0xE000)){
+            addFrag(ippkt->flags_froff, ippkt->len - sizeof(struct ipv4gram), ippkt->opts);
+        }
+        //If it is a ping packet, deal with it
         if(ippkt->proto == IPv4_PROTO_ICMP){
             struct icmpgram *icmp = (struct icmpgram *)ippkt->opts;
-            printICMP(icmp);
+            //printICMP(icmp);
             if(icmp->type == ICMP_REPLY){
                 ping_recieve(frame);
             } else if(icmp->type == ICMP_REQUEST){
@@ -153,7 +164,6 @@ syscall ipv4Recv(void *frame, int length){
             }
         }
     }
-    else { printf("Not addressed to us\n"); }
     return OK;
 }
 
